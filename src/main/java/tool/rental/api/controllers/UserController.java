@@ -1,16 +1,18 @@
 package tool.rental.api.controllers;
 
+import com.querydsl.core.BooleanBuilder;
 import tool.rental.api.annotations.AdminOnly;
 import tool.rental.api.annotations.RequireAuth;
 import tool.rental.api.entities.Address;
 import tool.rental.api.entities.ItemRental;
+import tool.rental.api.entities.QUser;
 import tool.rental.api.entities.Role;
 import tool.rental.api.entities.User;
 import tool.rental.api.repositories.ItemRentalRepository;
 import tool.rental.api.repositories.UserRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,18 +41,16 @@ public class UserController {
     @AdminOnly
     @GetMapping
     public Page<User> index(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int pageSize,
-            @RequestParam(required = false) String s,
-            @RequestParam(required = false) String sort,
-            @RequestParam(defaultValue = "asc") String direction) {
-        Sort sorting = (sort != null && !sort.isBlank())
-                ? Sort.by("desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC, sort)
-                : Sort.unsorted();
-        var pageable = PageRequest.of(page, pageSize, sorting);
-        return (s != null && !s.isBlank())
-                ? userRepository.search(s, pageable)
-                : userRepository.findAll(pageable);
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String s) {
+        var u = QUser.user;
+        var pred = new BooleanBuilder();
+        if (s != null && !s.isBlank())
+            pred.and(u.username.containsIgnoreCase(s)
+                    .or(u.firstName.containsIgnoreCase(s))
+                    .or(u.lastName.containsIgnoreCase(s))
+                    .or(u.email.containsIgnoreCase(s)));
+        return userRepository.findAll(pred, pageable);
     }
 
     @RequireAuth
@@ -91,15 +91,9 @@ public class UserController {
     @GetMapping("/{id}/rentals")
     public Page<ItemRental> rentals(
             @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int pageSize,
-            @RequestParam(required = false) String s,
-            @RequestParam(required = false) String sort,
-            @RequestParam(defaultValue = "asc") String direction) {
-        var pageable = ItemRentalController.pageable(page, pageSize, sort, direction);
-        return (s != null && !s.isBlank())
-                ? itemRentalRepository.searchByUser(id, s, pageable)
-                : itemRentalRepository.findByUser(id, pageable);
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String s) {
+        return itemRentalRepository.findAll(ItemRentalController.rentalPredicate(id, s), pageable);
     }
 
     record SuspendRequest(String reason) {}

@@ -23,7 +23,7 @@ public class ItemRentalUpdate {
     @Column(nullable = false)
     private RentalStatus status;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User createdBy;
 
     @Column(nullable = false, updatable = false)

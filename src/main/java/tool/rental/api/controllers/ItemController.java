@@ -1,15 +1,16 @@
 package tool.rental.api.controllers;
 
+import com.querydsl.core.BooleanBuilder;
 import tool.rental.api.annotations.AdminOnly;
 import tool.rental.api.entities.Item;
+import tool.rental.api.entities.QItem;
 import tool.rental.api.repositories.ItemRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/items")
@@ -22,22 +23,18 @@ public class ItemController {
 
     @GetMapping
     public Page<Item> index(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int pageSize,
+            @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) String s,
-            @RequestParam(required = false) Boolean available,
-            @RequestParam(required = false) String sort,
-            @RequestParam(defaultValue = "asc") String direction) {
-        Sort sorting = (sort != null && !sort.isBlank())
-                ? Sort.by("desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC, sort)
-                : Sort.unsorted();
-        var pageable = PageRequest.of(page, pageSize, sorting);
-        boolean hasSearch = s != null && !s.isBlank();
-        boolean onlyAvailable = available != null && available;
-        if (hasSearch && onlyAvailable) return itemRepository.searchAvailable(s, pageable);
-        if (hasSearch)                  return itemRepository.search(s, pageable);
-        if (onlyAvailable)              return itemRepository.findAvailable(pageable);
-        return itemRepository.findAll(pageable);
+            @RequestParam(required = false) Boolean available) {
+        var item = QItem.item;
+        var pred = new BooleanBuilder();
+        if (s != null && !s.isBlank())
+            pred.and(item.name.containsIgnoreCase(s)
+                    .or(item.producer.containsIgnoreCase(s))
+                    .or(item.description.containsIgnoreCase(s)));
+        if (available != null && available)
+            pred.and(item.availableAmount.gt(0));
+        return itemRepository.findAll(pred, pageable);
     }
 
     @GetMapping("/{id}")
@@ -60,15 +57,16 @@ public class ItemController {
 
         item.setId(id);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(itemRepository.save(item));
+        return ResponseEntity.ok(itemRepository.save(item));
     }
 
     @AdminOnly
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!itemRepository.existsById(id)) return ResponseEntity.notFound().build();
+        var item = itemRepository.findById(id).orElse(null);
+        if (item == null) return ResponseEntity.notFound().build();
 
-        itemRepository.deleteById(id);
+        itemRepository.delete(item);
         return ResponseEntity.noContent().build();
     }
 }

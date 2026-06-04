@@ -8,9 +8,8 @@ import tool.rental.api.services.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,14 +17,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
     public AuthController(UserRepository userRepository, JwtService jwtService,
-                          PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+                          AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
     }
 
@@ -62,12 +59,15 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest req) {
         try {
-            authenticationManager.authenticate(
+            var auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.username(), req.password()));
-        } catch (BadCredentialsException e) {
+            var role = auth.getAuthorities().stream()
+                    .findFirst()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .orElseThrow();
+            return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(req.username(), role)));
+        } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        var user = userRepository.findByUsername(req.username()).orElseThrow();
-        return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(req.username(), user.getRole().name())));
     }
 }

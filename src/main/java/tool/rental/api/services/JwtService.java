@@ -27,17 +27,12 @@ public class JwtService {
                 .compact();
     }
 
-    public String extractUsername(String token) {
-        return Jwts.parser().verifyWith(key).build()
-                .parseSignedClaims(token).getPayload().getSubject();
-    }
-
-    public boolean isValid(String token) {
+    public String extractUsernameIfValid(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
+            return Jwts.parser().verifyWith(key).build()
+                    .parseSignedClaims(token).getPayload().getSubject();
         } catch (Exception e) {
-            return false;
+            return null;
         }
     }
 }
