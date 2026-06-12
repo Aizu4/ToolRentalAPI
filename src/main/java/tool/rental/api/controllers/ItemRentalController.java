@@ -56,7 +56,7 @@ public class ItemRentalController {
         itemRentalUpdateRepository.save(entry);
     }
 
-    static Predicate rentalPredicate(Long userId, String s) {
+    static Predicate rentalPredicate(Long userId, String s, List<RentalStatus> statuses) {
         var r = QItemRental.itemRental;
         var pred = new BooleanBuilder();
         if (userId != null)
@@ -65,6 +65,8 @@ public class ItemRentalController {
             pred.and(r.item.name.containsIgnoreCase(s)
                     .or(r.item.producer.containsIgnoreCase(s))
                     .or(r.item.description.containsIgnoreCase(s)));
+        if (statuses != null && !statuses.isEmpty())
+            pred.and(r.status.in(statuses));
         return pred;
     }
 
@@ -72,8 +74,9 @@ public class ItemRentalController {
     @GetMapping
     public Page<ItemRental> index(
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String s) {
-        return itemRentalRepository.findAll(rentalPredicate(null, s), pageable);
+            @RequestParam(required = false) String s,
+            @RequestParam(required = false) List<RentalStatus> statuses) {
+        return itemRentalRepository.findAll(rentalPredicate(null, s, statuses), pageable);
     }
 
     @RequireAuth
@@ -81,10 +84,11 @@ public class ItemRentalController {
     public ResponseEntity<Page<ItemRental>> mine(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String s) {
+            @RequestParam(required = false) String s,
+            @RequestParam(required = false) List<RentalStatus> statuses) {
         var user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(itemRentalRepository.findAll(rentalPredicate(user.getId(), s), pageable));
+        return ResponseEntity.ok(itemRentalRepository.findAll(rentalPredicate(user.getId(), s, statuses), pageable));
     }
 
     @RequireAuth

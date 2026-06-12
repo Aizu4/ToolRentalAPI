@@ -92,8 +92,9 @@ public class UserController {
     public Page<ItemRental> rentals(
             @PathVariable Long id,
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String s) {
-        return itemRentalRepository.findAll(ItemRentalController.rentalPredicate(id, s), pageable);
+            @RequestParam(required = false) String s,
+            @RequestParam(required = false) java.util.List<tool.rental.api.entities.RentalStatus> statuses) {
+        return itemRentalRepository.findAll(ItemRentalController.rentalPredicate(id, s, statuses), pageable);
     }
 
     record SuspendRequest(String reason) {}
