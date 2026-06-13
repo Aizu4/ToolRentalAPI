@@ -42,13 +42,13 @@ public class SeedingService {
 
         public SeedConfig clamped() {
             return new SeedConfig(
-                    Math.max(1, Math.min(customers, 500)),
-                    Math.max(0, Math.min(suspended, 500)),
-                    Math.max(1, Math.min(items, 5000)),
+                    Math.clamp(customers, 1, 500),
+                    Math.clamp(suspended, 0, 500),
+                    Math.clamp(items, 1, 5000),
                     seedRentals,
-                    Math.max(0, Math.min(rentalsPerCustomer, 1000)),
-                    Math.max(0, Math.min(cancelledPct, 100)),
-                    Math.max(0, Math.min(lostPct, 100))
+                    Math.clamp(rentalsPerCustomer, 0, 1000),
+                    Math.clamp(cancelledPct, 0, 100),
+                    Math.clamp(lostPct, 0, 100)
             );
         }
     }
@@ -231,9 +231,7 @@ public class SeedingService {
     private record LifecycleEvent(RentalStatus status, Instant at, User actor) {}
 
     private void seedRentals(Random rng, User admin, int rentalsPerCustomer, int cancelledPct, int lostPct) {
-        List<User> customers = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.CUSTOMER)
-                .toList();
+        List<User> customers = userRepository.findAllByRole(Role.CUSTOMER);
         List<Item> items = itemRepository.findAll();
         if (customers.isEmpty() || items.isEmpty() || rentalsPerCustomer == 0) return;
 

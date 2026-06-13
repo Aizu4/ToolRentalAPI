@@ -4,7 +4,9 @@ import tool.rental.api.entities.Address;
 import tool.rental.api.entities.Role;
 import tool.rental.api.entities.User;
 import tool.rental.api.repositories.UserRepository;
+import tool.rental.api.services.AppUserDetails;
 import tool.rental.api.services.JwtService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,9 +40,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest req) {
-        if (userRepository.findByUsername(req.username()).isPresent())
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-
         var user = new User();
         user.setUsername(req.username());
         user.setPassword(req.password());
@@ -50,7 +49,11 @@ public class AuthController {
         if (req.email()       != null) user.setEmail(req.email());
         if (req.phoneNumber() != null) user.setPhoneNumber(req.phoneNumber());
         if (req.address()     != null) user.setAddress(req.address());
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponse(jwtService.generateToken(req.username(), Role.CUSTOMER.name())));
@@ -61,11 +64,8 @@ public class AuthController {
         try {
             var auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.username(), req.password()));
-            var role = auth.getAuthorities().stream()
-                    .findFirst()
-                    .map(a -> a.getAuthority().replace("ROLE_", ""))
-                    .orElseThrow();
-            return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(req.username(), role)));
+            var role = ((AppUserDetails) auth.getPrincipal()).user().getRole();
+            return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(req.username(), role.name())));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

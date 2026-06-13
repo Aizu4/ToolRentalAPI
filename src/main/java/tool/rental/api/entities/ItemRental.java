@@ -7,6 +7,10 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "ix_item_rental_status", columnList = "status"),
+        @Index(name = "ix_item_rental_user", columnList = "user_id")
+})
 @Getter
 @Setter
 public class ItemRental {

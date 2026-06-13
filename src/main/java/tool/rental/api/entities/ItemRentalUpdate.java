@@ -8,6 +8,10 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "ix_item_rental_update_rental_created", columnList = "rental_id, createdAt"),
+        @Index(name = "ix_item_rental_update_created", columnList = "createdAt")
+})
 @Getter
 @Setter
 public class ItemRentalUpdate {

@@ -15,8 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import tool.rental.api.services.AppUserDetails;
 
 @RestController
 @RequestMapping("/users")
@@ -55,20 +55,16 @@ public class UserController {
 
     @RequireAuth
     @GetMapping("/me")
-    public ResponseEntity<User> me(@AuthenticationPrincipal UserDetails userDetails) {
-        return userRepository.findByUsername(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public User me(@AuthenticationPrincipal AppUserDetails principal) {
+        return principal.user();
     }
 
     @RequireAuth
     @PatchMapping("/me")
-    public ResponseEntity<User> updateMe(
-            @AuthenticationPrincipal UserDetails userDetails,
+    public User updateMe(
+            @AuthenticationPrincipal AppUserDetails principal,
             @RequestBody UpdateProfileRequest req) {
-        var user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
-        if (user == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(applyUpdate(user, req));
+        return applyUpdate(principal.user(), req);
     }
 
     @AdminOnly
