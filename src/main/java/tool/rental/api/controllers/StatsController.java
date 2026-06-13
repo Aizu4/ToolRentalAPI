@@ -2,6 +2,7 @@ package tool.rental.api.controllers;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +27,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/stats")
 @AdminOnly
+@Transactional(readOnly = true)
 public class StatsController {
 
     private static final int ACTIVE_BUCKETS = 180;
@@ -45,7 +47,7 @@ public class StatsController {
 
     @GetMapping("/rentals-per-month")
     public List<MonthStatusCount> rentalsPerMonth(@RequestParam(defaultValue = "12") int months) {
-        int n = Math.max(1, Math.min(months, 60));
+        int n = Math.clamp(months, 1, 60);
         YearMonth end = YearMonth.now();
         YearMonth start = end.minusMonths(n - 1L);
         ZoneId zone = ZoneId.systemDefault();
@@ -82,7 +84,7 @@ public class StatsController {
 
     @GetMapping("/active-rentals-over-time")
     public List<StatusTimePoint> activeRentalsOverTime(@RequestParam(defaultValue = "10080") long minutes) {
-        long m = Math.max(1L, Math.min(minutes, MAX_ACTIVE_WINDOW_MINUTES));
+        long m = Math.clamp(minutes, 1L, MAX_ACTIVE_WINDOW_MINUTES);
         Instant end = Instant.now();
         Instant start = end.minus(Duration.ofMinutes(m));
 

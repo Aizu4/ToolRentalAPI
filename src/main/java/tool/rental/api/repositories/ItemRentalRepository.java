@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 
+import java.util.Optional;
+
 public interface ItemRentalRepository extends JpaRepository<ItemRental, Long>, QuerydslPredicateExecutor<ItemRental> {
 
     @Override
@@ -17,4 +19,8 @@ public interface ItemRentalRepository extends JpaRepository<ItemRental, Long>, Q
     @Override
     @EntityGraph(attributePaths = {"item", "user"})
     Page<ItemRental> findAll(Predicate predicate, Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"item", "user"})
+    Optional<ItemRental> findById(Long id);
 }
