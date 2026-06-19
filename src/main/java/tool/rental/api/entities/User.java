@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
+@Table(name = "users")
 @Getter
 @NoArgsConstructor
 public class User {
