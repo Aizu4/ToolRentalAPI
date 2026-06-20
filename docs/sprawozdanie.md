@@ -28,14 +28,17 @@ w systemie i ma wgląd w statystyki.
 
 System rozróżnia trzy role (`Role` enum: `ADMIN`, `CUSTOMER`, `SUSPENDED`).
 Dwie główne role to **Administrator** i **Klient (Customer)**; `SUSPENDED`
-jest dodatkowym stanem zablokowanego konta.
+jest dodatkowym stanem zablokowanego konta. Spring Security ma skonfigurowaną
+hierarchię ról (`ROLE_ADMIN > ROLE_CUSTOMER`), więc administrator
+dziedziczy wszystkie uprawnienia klienta i może dodatkowo korzystać
+z funkcji administracyjnych.
 
 | Funkcjonalność                                | Klient | Admin |
 |-----------------------------------------------|:------:|:-----:|
 | Rejestracja, logowanie                        | ✓      | ✓     |
 | Przeglądanie katalogu narzędzi                | ✓      | ✓     |
-| Wypożyczenie narzędzia                        | ✓      | —     |
-| Anulowanie własnego wypożyczenia (PENDING)    | ✓      | —     |
+| Wypożyczenie narzędzia                        | ✓      | ✓     |
+| Anulowanie własnego wypożyczenia (PENDING)    | ✓      | ✓     |
 | Historia własnych wypożyczeń                  | ✓      | ✓     |
 | Edycja własnego profilu                       | ✓      | ✓     |
 | Zarządzanie katalogiem (CRUD)                 | —      | ✓     |

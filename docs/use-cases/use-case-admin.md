@@ -1,5 +1,10 @@
 # Administrator
 
+Administrator dziedziczy wszystkie przypadki użycia klienta (przeglądanie
+narzędzi, własne wypożyczenia, edycja profilu itd. — patrz
+[`use-case-customer.md`](use-case-customer.md)) i dodatkowo ma dostęp do
+poniższych funkcji administracyjnych.
+
 ```mermaid
 flowchart LR
     admin([Administrator])
