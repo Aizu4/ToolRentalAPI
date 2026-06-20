@@ -55,7 +55,6 @@ Diagramy w osobnych plikach (Mermaid):
 - [`use-cases/use-case-admin.md`](use-cases/use-case-admin.md) — administrator
 - [`use-cases/use-case-customer.md`](use-cases/use-case-customer.md) — klient
 - [`use-cases/use-case-guest.md`](use-cases/use-case-guest.md) — gość (niezalogowany)
-- [`use-cases/use-case-suspended.md`](use-cases/use-case-suspended.md) — zawieszony użytkownik
 
 ## 3. Diagram sekwencji
 
@@ -179,7 +178,7 @@ trafią do bazy. Implementacja jest umieszczona w setterze
 `User.setPassword(rawPassword)` (encja sama hashuje przed zapisem), dzięki
 czemu kod biznesowy nie może przypadkowo zapisać hasła w postaci jawnej.
 W bazie kolumna `password` zawiera ciąg postaci
-`$2a$10$<22-bajtowa-sól><31-znakowy-hash>`. Weryfikacja przy logowaniu odbywa
+`$2a$10$<22-byte-salt><31-char-hash>`. Weryfikacja przy logowaniu odbywa
 się przez `BCryptPasswordEncoder.matches`.
 
 ### 6.7 Baza danych
