@@ -222,22 +222,36 @@ elementy architektury:
 
 ## 7. Procedura instalacji i uruchamiania
 
+Oba repozytoria mają własne pliki `Dockerfile` i `docker-compose.yml`,
+więc całe uruchomienie sprowadza się do `docker compose up` w każdym
+z nich.
+
 ### Wymagania
 
-- **Java 26** (lub kompatybilna nowsza) w `JAVA_HOME`
-- **Node.js 20+** i **npm**
-- **PostgreSQL 16+** (serwer lokalny lub Docker)
-- (opcjonalnie) **psql** do ręcznego uruchomienia skryptów `.sql`
+- **Docker 20+** oraz **Docker Compose v2**
+- **Git** do sklonowania obu repozytoriów
 
-### Krok 1 — backend
+### Krok 1 — backend (PostgreSQL + API)
 
 ```bash
 cd tool_rental_api
-./gradlew bootRun         # uruchamia serwer na http://localhost:8080
+docker compose up -d --build
 ```
 
-Przy pierwszym starcie `DatabaseSeeder` zauważy, że baza jest pusta, i
-zaseeduje dane przykładowe (5 użytkowników, 300 narzędzi, 240 wypożyczeń).
+`docker-compose.yml` uruchamia dwie usługi:
+
+- **`postgres`** — `postgres:17-alpine`, baza `tool_rental`, na porcie
+  `5432`. Dane trzymane w wolumenie `postgres_data`.
+- **`api`** — obraz budowany z `Dockerfile` (multi-stage build na
+  `eclipse-temurin:26-jdk`, `./gradlew bootJar`), wystawiony na porcie
+  `8080`. Czeka na healthcheck Postgresa przed startem.
+
+Po starcie API `DatabaseSeeder` zauważy, że baza jest pusta, i zaseeduje
+dane przykładowe (5 użytkowników, 300 narzędzi, 240 wypożyczeń).
+
+Domyślne zmienne (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `SERVER_PORT`,
+`JWT_SECRET`) można nadpisać przez plik `.env` lub eksport w shellu —
+patrz wartości domyślne w `docker-compose.yml`.
 
 ### Krok 2 — frontend
 
@@ -245,12 +259,15 @@ W osobnym terminalu:
 
 ```bash
 cd tool_rental_web
-npm install
-npm run dev               # uruchamia Vite na http://localhost:5173
+docker compose up -d --build
 ```
 
-Aplikacja będzie strzelać do `http://localhost:8080` (zmienna
-`VITE_API_BASE_URL` może to nadpisać).
+`docker-compose.yml` buduje obraz z `Dockerfile` (build w `node:22-alpine`
+→ statyczny bundle w `nginx:alpine`) i wystawia frontend na porcie `80`.
+Adres backendu jest wpiekany w bundle w czasie buildu z argumentu
+`VITE_API_BASE_URL` (domyślnie `http://localhost:8080`).
+
+Aplikacja dostępna pod `http://localhost`.
 
 ### Krok 3 — logowanie
 
@@ -274,17 +291,19 @@ ponownie zaseedowana w jednej transakcji.
 ### Krok 5 — ręczne odtworzenie schematu (opcjonalnie)
 
 ```bash
-psql -U tool_rental -d tool_rental -f tool_rental_api/src/main/resources/db/schema.sql
+docker compose exec -T postgres \
+    psql -U tool_rental -d tool_rental \
+    < src/main/resources/db/schema.sql
 ```
 
-Po wykonaniu skryptu uruchomienie backendu (lub kliknięcie **Reset DB with
+Po wykonaniu skryptu kolejny start API (lub kliknięcie **Reset DB with
 sample data**) wypełni puste tabele danymi przez `SeedingService`.
 
-### Build produkcyjny
+### Zatrzymanie i restart
 
 ```bash
-cd tool_rental_api && ./gradlew bootJar
-cd tool_rental_web && npm run build         # artefakt w dist/
+docker compose down            # zatrzymuje kontenery, wolumen zostaje
+docker compose down -v         # zatrzymuje + usuwa wolumen Postgresa
 ```
 
 ## 8. Źródła
