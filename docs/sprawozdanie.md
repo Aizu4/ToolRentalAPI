@@ -1,7 +1,7 @@
 # Sprawozdanie — Tool Rental
 
 **Przedmiot:** Zaawansowane programowanie aplikacji bazodanowych
-**Autor:** _(uzupełnić)_
+**Autorzy:** Oskar Dybowski, Franciszek Szczepaniak
 **Repozytorium:** `tool_rental_web` (frontend) + `tool_rental_api` (backend)
 
 ---
